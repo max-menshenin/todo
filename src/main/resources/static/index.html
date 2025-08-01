@@ -1,10 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>ToDo App</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        input { padding: 5px; margin-right: 10px; }
+        li { margin: 5px 0; }
+    </style>
 </head>
 <body>
-$END$
+
+<h1>📝 ToDo List</h1>
+
+<input type="text" id="todoInput" placeholder="Новая задача..." />
+<button onclick="addTodo()">Добавить</button>
+
+<ul id="todoList"></ul>
+
+<script>
+    async function loadTodos() {
+        const res = await fetch('/todos');
+        const todos = await res.json();
+        const list = document.getElementById('todoList');
+        list.innerHTML = '';
+        todos.forEach(todo => {
+            const item = document.createElement('li');
+            item.innerHTML = `
+          <input type="checkbox" ${todo.completed ? 'checked' : ''} onclick="toggle(${todo.id}, ${!todo.completed})" />
+          ${todo.title}
+          <button onclick="remove(${todo.id})">🗑</button>
+        `;
+            list.appendChild(item);
+        });
+    }
+
+    async function addTodo() {
+        const input = document.getElementById('todoInput');
+        const title = input.value.trim();
+        if (!title) return;
+
+        await fetch('/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, completed: false })
+        });
+        input.value = '';
+        loadTodos();
+    }
+
+    async function toggle(id, completed) {
+        await fetch(`/todos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed, title: '...' }) // title будет перезаписан
+        });
+        loadTodos();
+    }
+
+    async function remove(id) {
+        await fetch(`/todos/${id}`, { method: 'DELETE' });
+        loadTodos();
+    }
+
+    loadTodos();
+</script>
 </body>
 </html>
